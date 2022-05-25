@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -19,6 +19,7 @@ async function run() {
   try {
     await client.connect();
     const toolsCollection = client.db("tools_portal").collection("tools");
+    const orderCollection = client.db("tools_portal").collection("orders");
 
     // operation on tools route
 
@@ -27,6 +28,25 @@ async function run() {
       const cursor = toolsCollection.find(query);
       const tools = await cursor.toArray();
       res.send(tools);
+    });
+    app.get("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const details = await toolsCollection.findOne(query);
+      res.send(details);
+    });
+    app.patch("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const quantity = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: { orderQuantity: quantity },
+      };
+      const updatedBooking = await orderCollection.updateOne(
+        filter,
+        updatedDoc
+      );
+      res.send(updatedBooking);
     });
   } finally {
   }
