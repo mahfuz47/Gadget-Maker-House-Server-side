@@ -91,6 +91,13 @@ async function run() {
       }
     });
 
+    app.delete("/users/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await userCollection.deleteOne(filter);
+      res.send(result);
+    });
+
     //
     //
     //
