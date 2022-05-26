@@ -6,6 +6,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 const app = express();
 const jwt = require("jsonwebtoken");
+const query = require("express/lib/middleware/query");
 app.use(cors());
 app.use(express.json());
 
@@ -21,6 +22,7 @@ const client = new MongoClient(uri, {
 //JWT verify
 //
 //
+
 function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
@@ -31,7 +33,6 @@ function verifyJWT(req, res, next) {
     if (err) {
       return res.status(403).send({ message: "Forbidden access" });
     }
-    console.log("decoded", decoded);
     req.decoded = decoded;
     next();
   });
@@ -47,6 +48,24 @@ async function run() {
     const orderCollection = client.db("tools_portal").collection("orders");
     const paymentCollection = client.db("tools_portal").collection("payments");
     const reviewCollection = client.db("tools_portal").collection("reviews");
+    const profileCollection = client.db("tools_portal").collection("profile");
+
+    //
+    //
+    //  Verify Admin
+    //
+    //
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
+    };
 
     //
     //
@@ -73,7 +92,7 @@ async function run() {
       res.send({ result, accessToken: token });
     });
 
-    app.put("/users/admin/:email", verifyJWT, async (req, res) => {
+    app.put("/users/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({
@@ -124,6 +143,11 @@ async function run() {
       const details = await toolsCollection.findOne(query);
       res.send(details);
     });
+    app.post("/tools", verifyJWT, async (req, res) => {
+      const tools = req.body;
+      const result = await toolsCollection.insertOne(tools);
+      res.send(result);
+    });
     app.patch("/tools/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const quantity = req.body;
@@ -136,6 +160,13 @@ async function run() {
         updatedDoc
       );
       res.send(updatedBooking);
+    });
+
+    app.delete("/tools/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await toolsCollection.deleteOne(filter);
+      res.send(result);
     });
     //
     //
@@ -217,7 +248,7 @@ async function run() {
     // All orders
     //
     //
-    app.get("/allOrders", async (req, res) => {
+    app.get("/allOrders", verifyJWT, verifyJWT, async (req, res) => {
       const result = await orderCollection.find().toArray();
       res.send(result);
     });
@@ -261,6 +292,28 @@ async function run() {
       const result = await reviewCollection.insertOne(review);
       res.send(result);
     });
+
+    app.get("/profile", async (req, res) => {
+      const users = await profileCollection.find().toArray();
+      res.send(users);
+    });
+
+    // app.get("/profile", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: ObjectId(id) };
+    //   const result = await profileCollection.findOne(query);
+    //   res.send(result);
+    // });
+
+    // app.patch("/profile", async (req, res) => {
+    //   const data = req.body;
+    //   // const options = { upsert: true };
+    //   const updatedDoc = {
+    //     $set: data,
+    //   };
+    //   const result = await profileCollection.updateOne(updatedDoc);
+    //   res.send(result);
+    // });
   } finally {
   }
 }
