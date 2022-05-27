@@ -236,7 +236,7 @@ async function run() {
     // Delete Paid orders
     //
     //
-    app.delete("/paidOrders/:id", verifyJWT, async (req, res) => {
+    app.delete("/paidOrders/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await orderCollection.deleteOne(filter);
@@ -248,7 +248,7 @@ async function run() {
     // All orders
     //
     //
-    app.get("/allOrders", verifyJWT, verifyJWT, async (req, res) => {
+    app.get("/allOrders", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await orderCollection.find().toArray();
       res.send(result);
     });
@@ -293,6 +293,7 @@ async function run() {
       res.send(result);
     });
 
+    // Get Profile Data
     app.get("/profile", async (req, res) => {
       const users = await profileCollection.find().toArray();
       res.send(users);
@@ -304,16 +305,25 @@ async function run() {
     //   const result = await profileCollection.findOne(query);
     //   res.send(result);
     // });
+    app.post("/profile", verifyJWT, async (req, res) => {
+      const order = req.body;
+      const query = {
+        email: order.email,
+      };
+      const exists = await profileCollection.findOne(query);
+      if (exists) {
+        return res.send({ success: false, tool: exists });
+      }
+      const result = await profileCollection.insertOne(order);
+      return res.send({ success: true, result });
+    });
 
-    // app.patch("/profile", async (req, res) => {
-    //   const data = req.body;
-    //   // const options = { upsert: true };
-    //   const updatedDoc = {
-    //     $set: data,
-    //   };
-    //   const result = await profileCollection.updateOne(updatedDoc);
-    //   res.send(result);
-    // });
+    app.delete("/profile/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await profileCollection.deleteOne(filter);
+      res.send(result);
+    });
   } finally {
   }
 }
