@@ -49,6 +49,7 @@ async function run() {
     const paymentCollection = client.db("tools_portal").collection("payments");
     const reviewCollection = client.db("tools_portal").collection("reviews");
     const profileCollection = client.db("tools_portal").collection("profile");
+    const infoCollection = client.db("tools_portal").collection("info");
 
     //
     //
@@ -110,14 +111,14 @@ async function run() {
       }
     });
 
-    app.get("/admin/:email", async (req, res) => {
+    app.get("/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
       const isAdmin = user.role === "admin";
       res.send({ admin: isAdmin });
     });
 
-    app.delete("/users/:email", verifyJWT, async (req, res) => {
+    app.delete("/users/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const result = await userCollection.deleteOne(filter);
@@ -227,7 +228,7 @@ async function run() {
     // Paid orders
     //
     //
-    app.get("/paidOrders", async (req, res) => {
+    app.get("/paidOrders", verifyJWT, verifyAdmin, async (req, res) => {
       const orders = await orderCollection.find({ paid: true }).toArray();
       return res.send(orders);
     });
@@ -299,12 +300,6 @@ async function run() {
       res.send(users);
     });
 
-    // app.get("/profile", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: ObjectId(id) };
-    //   const result = await profileCollection.findOne(query);
-    //   res.send(result);
-    // });
     app.post("/profile", verifyJWT, async (req, res) => {
       const order = req.body;
       const query = {
@@ -318,10 +313,22 @@ async function run() {
       return res.send({ success: true, result });
     });
 
-    app.delete("/profile/:id", async (req, res) => {
+    app.delete("/profile/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await profileCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    //Operation on dealers info route
+    app.get("/info", verifyJWT, verifyAdmin, async (req, res) => {
+      const info = await infoCollection.find().toArray();
+      res.send(info);
+    });
+
+    app.post("/info", verifyJWT, async (req, res) => {
+      const info = req.body;
+      const result = await infoCollection.insertOne(info);
       res.send(result);
     });
   } finally {
