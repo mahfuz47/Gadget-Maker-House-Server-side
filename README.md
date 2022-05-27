@@ -1,12 +1,12 @@
-## `[Gadget Maker House Server Side Live]`(https://polar-refuge-25611.herokuapp.com/)
+## [Gadget Maker House Server Side Live](https://polar-refuge-25611.herokuapp.com/)
 
 #### [https://polar-refuge-25611.herokuapp.com/](https://polar-refuge-25611.herokuapp.com/)
 
-## `[Gadget Maker House]`(https://gadget-house-app.web.app/)
+## [Gadget Maker House](https://gadget-house-app.web.app/)
 
 #### [https://gadget-house-app.web.app/](https://gadget-house-app.web.app/)
 
-#### `[client side code link]`(https://github.com/programming-hero-web-course1/manufacturer-website-client-side-mahfuz47)
+#### [client side code link](https://github.com/programming-hero-web-course1/manufacturer-website-client-side-mahfuz47)
 
 -
 -
